@@ -6,6 +6,7 @@ import User from "../models/User.js"; // ✅ FIXED
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 import Student from "../models/Student.js";
+import bcrypt from "bcryptjs";
 
 
 const router = express.Router();
@@ -372,42 +373,6 @@ router.post(
         generatedPassword: passwordPlain, // optional (remove later)
         faculty,
       });
-    } catch (err) {
-      console.error("ADD FACULTY ERROR:", err);
-      res.status(500).json({ message: "Server error" });
-    }
-  }
-);
-
-
-/* =========================================================
-   ADMIN: ADD FACULTY
-========================================================= */
-router.post(
-  "/faculties",
-  verifyToken,
-  allowRoles("admin"),
-  async (req, res) => {
-    try {
-      const { name, email, password } = req.body;
-
-      if (!name || !email || !password) {
-        return res.status(400).json({ message: "All fields required" });
-      }
-
-      const exists = await User.findOne({ email });
-      if (exists) {
-        return res.status(409).json({ message: "Email already exists" });
-      }
-
-      const faculty = await User.create({
-        name,
-        email,
-        password,
-        role: "faculty",
-      });
-
-      res.status(201).json(faculty);
     } catch (err) {
       console.error("ADD FACULTY ERROR:", err);
       res.status(500).json({ message: "Server error" });
