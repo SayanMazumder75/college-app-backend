@@ -1,8 +1,8 @@
-import express from "express";
 import bcrypt from "bcryptjs";
+import express from "express";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
 import Student from "../models/Student.js";
+import User from "../models/User.js";
 const router = express.Router();
 
 /* ================= REGISTER ================= */
@@ -50,13 +50,11 @@ router.post("/login", async (req, res) => {
       roleSource = "student";
     }
 
-    if (!account)
-      return res.status(400).json({ message: "User not found" });
+    if (!account) return res.status(400).json({ message: "User not found" });
 
     // 3️⃣ Compare password
     const isMatch = await bcrypt.compare(password, account.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid password" });
+    if (!isMatch) return res.status(400).json({ message: "Invalid password" });
 
     // 4️⃣ Create JWT
     const token = jwt.sign(
@@ -65,7 +63,7 @@ router.post("/login", async (req, res) => {
         role: roleSource === "student" ? "student" : account.role,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     // 5️⃣ Response
@@ -74,7 +72,8 @@ router.post("/login", async (req, res) => {
       role: roleSource === "student" ? "student" : account.role,
       user: {
         _id: account._id,
-        name: account.name,
+        firstName: account.firstName,
+        lastName: account.lastName,
       },
     });
   } catch (error) {

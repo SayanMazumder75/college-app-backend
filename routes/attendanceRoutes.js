@@ -343,9 +343,9 @@ router.post(
   allowRoles("admin"),
   async (req, res) => {
     try {
-      const { name, email, password } = req.body;
+      const { firstName, lastName, phone, email } = req.body;
 
-      if (!name || !email || !password) {
+      if (!firstName || !lastName || !phone || !email) {
         return res.status(400).json({ message: "All fields required" });
       }
 
@@ -354,20 +354,31 @@ router.post(
         return res.status(409).json({ message: "Email already exists" });
       }
 
+      // 🔐 AUTO PASSWORD
+      const passwordPlain = `${firstName}@${phone.slice(-4)}`;
+      const hashedPassword = await bcrypt.hash(passwordPlain, 10);
+
       const faculty = await User.create({
-        name,
+        firstName,
+        lastName,
+        phone,
         email,
-        password,
+        password: hashedPassword,
         role: "faculty",
       });
 
-      res.status(201).json(faculty);
+      res.status(201).json({
+        message: "Faculty created",
+        generatedPassword: passwordPlain, // optional (remove later)
+        faculty,
+      });
     } catch (err) {
       console.error("ADD FACULTY ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
   }
 );
+
 
 /* =========================================================
    ADMIN: ADD FACULTY
