@@ -335,42 +335,42 @@ router.get(
   }
 );
 
-/* =========================================================
-   ADMIN: ADD FACULTY POST
-========================================================= */
+// ADMIN: ADD FACULTY
 router.post(
   "/faculties",
   verifyToken,
   allowRoles("admin"),
   async (req, res) => {
     try {
-      const { firstName, lastName, phone, email } = req.body;
+      const { firstName, lastName, email, phone } = req.body;
 
-      if (!firstName || !lastName || !phone || !email) {
+      if (!firstName || !lastName || !email || !phone) {
         return res.status(400).json({ message: "All fields required" });
       }
 
-      const exists = await User.findOne({ email });
-      if (exists) {
-        return res.status(409).json({ message: "Email already exists" });
+      // 🔴 CHECK DUPLICATE EMAIL
+      const existing = await User.findOne({ email });
+      if (existing) {
+        return res.status(409).json({
+          message: "Email already exists",
+        });
       }
 
-      // 🔐 AUTO PASSWORD
       const passwordPlain = `${firstName}@${phone.slice(-4)}`;
       const hashedPassword = await bcrypt.hash(passwordPlain, 10);
 
       const faculty = await User.create({
         firstName,
         lastName,
-        phone,
         email,
+        phone,
         password: hashedPassword,
         role: "faculty",
       });
 
       res.status(201).json({
         message: "Faculty created",
-        generatedPassword: passwordPlain, // optional (remove later)
+        generatedPassword: passwordPlain,
         faculty,
       });
     } catch (err) {
@@ -380,34 +380,81 @@ router.post(
   }
 );
 
-/* =========================================================
-   ADMIN: UPDATE FACULTY (NAME / EMAIL)
-========================================================= */
+// ADMIN: UPDATE FACULTY
 router.put(
   "/faculties/:id",
   verifyToken,
   allowRoles("admin"),
   async (req, res) => {
     try {
-      const { name, email } = req.body;
+      const { firstName, lastName, email, phone } = req.body;
 
-      if (!name || !email) {
-        return res.status(400).json({ message: "Name and email required" });
+      if (!firstName || !lastName || !email || !phone) {
+        return res.status(400).json({ message: "All fields required" });
+      }
+
+      // 🔴 CHECK DUPLICATE EMAIL (EXCEPT ITSELF)
+      const existing = await User.findOne({
+        email,
+        _id: { $ne: req.params.id }, // ⭐ key line
+      });
+
+      if (existing) {
+        return res.status(409).json({
+          message: "Email already exists",
+        });
       }
 
       const updated = await User.findByIdAndUpdate(
         req.params.id,
-        { name, email },
+        { firstName, lastName, email, phone },
         { new: true }
-      ).select("name email role createdAt");
+      ).select("_id firstName lastName email phone role");
 
       if (!updated) {
         return res.status(404).json({ message: "Faculty not found" });
       }
 
-      res.json(updated);
+      res.json({
+        message: "Faculty updated successfully",
+        faculty: updated,
+      });
     } catch (err) {
       console.error("UPDATE FACULTY ERROR:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
+
+/* =========================================================
+   ADMIN: RESET FACULTY PASSWORD
+   POST /api/attendance/faculties/:id/reset-password
+========================================================= */
+router.post(
+  "/faculties/:id/reset-password",
+  verifyToken,
+  allowRoles("admin"),
+  async (req, res) => {
+    try {
+      const faculty = await User.findById(req.params.id);
+
+      if (!faculty || faculty.role !== "faculty") {
+        return res.status(404).json({ message: "Faculty not found" });
+      }
+
+      // 🔐 Generate password again
+      const newPasswordPlain = `${faculty.firstName}@${faculty.phone.slice(-4)}`;
+      const hashedPassword = await bcrypt.hash(newPasswordPlain, 10);
+
+      faculty.password = hashedPassword;
+      await faculty.save();
+
+      res.json({
+        message: "Password reset successfully",
+        generatedPassword: newPasswordPlain, // show once
+      });
+    } catch (err) {
+      console.error("RESET PASSWORD ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
   }
@@ -416,15 +463,25 @@ router.put(
 
 /* =========================================================
    ADMIN: DELETE FACULTY
+   DELETE /api/attendance/faculties/:id
 ========================================================= */
-
 router.delete(
   "/faculties/:id",
   verifyToken,
   allowRoles("admin"),
   async (req, res) => {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ message: "Faculty deleted successfully" });
+    try {
+      const deleted = await User.findByIdAndDelete(req.params.id);
+
+      if (!deleted) {
+        return res.status(404).json({ message: "Faculty not found" });
+      }
+
+      res.json({ message: "Faculty deleted successfully" });
+    } catch (err) {
+      console.error("DELETE FACULTY ERROR:", err);
+      res.status(500).json({ message: "Server error" });
+    }
   }
 );
 
