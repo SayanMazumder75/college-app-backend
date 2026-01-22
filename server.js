@@ -17,6 +17,7 @@ const createDefaultAdmin = async () => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminPhone = process.env.ADMIN_PHONE || "9999999999";
 
     if (!adminEmail || !adminPassword) {
       console.log("⚠️ Admin credentials not set in env");
@@ -36,7 +37,9 @@ const createDefaultAdmin = async () => {
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
     await User.create({
-      name: "Super Admin",
+      firstName: "Super",
+      lastName: "Admin",
+      phone: adminPhone,
       email: adminEmail,
       password: hashedPassword,
       role: "admin",
@@ -47,6 +50,7 @@ const createDefaultAdmin = async () => {
     console.error("❌ Error creating default admin:", error.message);
   }
 };
+
 
 
 dotenv.config();
