@@ -2,6 +2,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import User from "./models/User.js";
 
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -10,6 +12,42 @@ import protectedRoutes from "./routes/protectedRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+
+const createDefaultAdmin = async () => {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      console.log("⚠️ Admin credentials not set in env");
+      return;
+    }
+
+    const existingAdmin = await User.findOne({
+      email: adminEmail,
+      role: "admin",
+    });
+
+    if (existingAdmin) {
+      console.log("✅ Default admin already exists");
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+    await User.create({
+      name: "Super Admin",
+      email: adminEmail,
+      password: hashedPassword,
+      role: "admin",
+    });
+
+    console.log("🔥 Default admin created successfully");
+  } catch (error) {
+    console.error("❌ Error creating default admin:", error.message);
+  }
+};
+
 
 dotenv.config();
 
@@ -51,8 +89,12 @@ app.get("/", (req, res) => {
 /* ================= SERVER ================= */
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log("✅ MongoDB Connected");
+
+    // 👇 CREATE ADMIN HERE
+    await createDefaultAdmin();
+
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ Server running on port ${PORT}`);
     });
