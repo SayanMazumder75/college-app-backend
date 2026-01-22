@@ -9,11 +9,14 @@ import noticeRoutes from "./routes/noticeRoutes.js";
 import protectedRoutes from "./routes/protectedRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
-import userRoutes from "./routes/userRoutes.js"; // 🔥 ADD THIS
+import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
 
 const app = express();
+
+/* ================= PORT (🔥 FIXED) ================= */
+const PORT = process.env.PORT || 5000;
 
 /* ================= MIDDLEWARES ================= */
 app.use(cors());
@@ -34,7 +37,7 @@ app.use("/api", protectedRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/notices", noticeRoutes);
 app.use("/api/subjects", subjectRoutes);
-app.use("/api/users", userRoutes); // 🔥 ADD THIS
+app.use("/api/users", userRoutes);
 app.use("/api/students", studentRoutes);
 
 /* ================= STATIC ================= */
@@ -55,6 +58,5 @@ mongoose
     });
   })
   .catch((err) => {
-    console.error("❌ MongoDB connection failed:", err.message);
+    console.error("❌ MongoDB connection failed:", err);
   });
-
