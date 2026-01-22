@@ -329,8 +329,8 @@ router.get(
   allowRoles("admin"),
   async (req, res) => {
     const faculties = await User.find({ role: "faculty" }).select(
-      "name email createdAt"
-    );
+  "firstName lastName email phone createdAt"
+);
     res.json(faculties);
   }
 );
