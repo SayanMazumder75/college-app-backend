@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -13,11 +15,14 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       required: true,
+      minlength: 10,
+      maxlength: 10,
     },
     email: {
       type: String,
       required: true,
       unique: true,
+      lowercase: true,
     },
     password: {
       type: String,
@@ -26,11 +31,11 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["student", "faculty", "admin"],
-      default: "student",
+      enum: ["admin", "faculty", "student"],
+      default: "faculty",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("User", userSchema);
