@@ -17,8 +17,9 @@ router.get(
   async (req, res) => {
     try {
       const subjects = await Subject.find()
-        .populate("faculty", "name email")
-        .sort({ createdAt: -1 });
+  .populate("faculty", "firstName lastName email")
+  .sort({ createdAt: -1 });
+
 
       res.json(subjects);
     } catch (err) {
@@ -71,7 +72,10 @@ router.post(
         faculty: facultyId,
       });
 
-      const populated = await subject.populate("faculty", "name email");
+const populated = await subject.populate(
+  "faculty",
+  "firstName lastName email"
+);
 
       res.status(201).json({
         message: "Subject created successfully",
