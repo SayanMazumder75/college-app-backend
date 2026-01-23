@@ -69,7 +69,7 @@ router.post("/login", async (req, res) => {
 
     // 2️⃣ Student
     if (!account) {
-      account = await Student.findOne({ email });
+     account = await Student.findOne({ email }).select("+password");
       roleSource = "student";
     }
 
@@ -99,8 +99,8 @@ router.post("/login", async (req, res) => {
       user: {
         _id: account._id,
         name: roleSource === "student"
-          ? account.name
-          : `${account.firstName} ${account.lastName}`,
+          ? `${account.firstName} ${account.lastName}`
+            : `${account.firstName} ${account.lastName}`,
       },
     });
   } catch (error) {

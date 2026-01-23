@@ -64,10 +64,12 @@ router.post(
         emergencyContactPhone,
       } = req.body;
 
+      // ✅ BASIC VALIDATION
       if (!firstName || !lastName || !email || !phone) {
         return res.status(400).json({ message: "Required fields missing" });
       }
 
+      // ✅ CHECK EMAIL IN BOTH COLLECTIONS
       const exists =
         (await Student.findOne({ email })) ||
         (await User.findOne({ email }));
@@ -76,16 +78,18 @@ router.post(
         return res.status(409).json({ message: "Email already exists" });
       }
 
-      // 🔐 AUTO PASSWORD
-      const namePart = firstName.replace(/\s+/g, "").substring(0, 5).toLowerCase();
-      const phonePart = phone.slice(-4);
-      const rawPassword = `${namePart}@${phonePart}`;
+      if (phone.length < 4) {
+        return res.status(400).json({ message: "Invalid phone number" });
+      }
+
+      // 🔐 AUTO PASSWORD (FULL FIRST NAME)
+      const rawPassword = `${firstName}@${phone.slice(-4)}`;
       const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
       const student = await Student.create({
         firstName,
         lastName,
-        email,
+        email: email.toLowerCase(),
         phone,
         password: hashedPassword,
         course,
@@ -107,10 +111,11 @@ router.post(
 
       res.status(201).json({
         message: "Student added successfully",
-        generatedPassword: rawPassword, // ⚠️ show once
+        generatedPassword: rawPassword, // ⚠️ admin-only, show once
         student: {
           _id: student._id,
-          name: `${student.firstName} ${student.lastName}`,
+          firstName: student.firstName,
+          lastName: student.lastName,
           email: student.email,
         },
       });
@@ -265,20 +270,20 @@ router.post(
         return res.status(404).json({ message: "Student not found" });
       }
 
-      const namePart = student.firstName
-        .replace(/\s+/g, "")
-        .substring(0, 5)
-        .toLowerCase();
+      if (student.phone.length < 4) {
+        return res.status(400).json({ message: "Invalid phone number" });
+      }
 
-      const phonePart = student.phone.slice(-4);
+      // 🔐 SAME RULE AS CREATE
+      const newPassword = `${student.firstName}@${student.phone.slice(-4)}`;
+      const hashed = await bcrypt.hash(newPassword, 10);
 
-      const newPassword = `${namePart}@${phonePart}`;
-      student.password = await bcrypt.hash(newPassword, 10);
+      student.password = hashed;
       await student.save();
 
       res.json({
         message: "Password reset successful",
-        newPassword, // admin only
+        newPassword, // ⚠️ admin only
       });
     } catch (err) {
       console.error("RESET STUDENT PASSWORD ERROR:", err);
