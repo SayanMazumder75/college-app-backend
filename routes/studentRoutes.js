@@ -244,4 +244,49 @@ router.delete(
   }
 );
 
+/* =========================================================
+   ADMIN: RESET STUDENT PASSWORD
+   POST /api/students/:id/reset-password
+========================================================= */
+router.post(
+  "/:id/reset-password",
+  verifyToken,
+  allowRoles("admin"),
+  async (req, res) => {
+    try {
+      const student = await Student.findById(req.params.id);
+
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      if (!student.phone || student.phone.length < 4) {
+        return res.status(400).json({ message: "Invalid phone number" });
+      }
+
+      const namePart = student.name
+        .replace(/\s+/g, "")
+        .substring(0, 5)
+        .toLowerCase();
+
+      const phonePart = student.phone.slice(-4);
+
+      const newPassword = `${namePart}@${phonePart}`;
+      const hashed = await bcrypt.hash(newPassword, 10);
+
+      student.password = hashed;
+      await student.save();
+
+      res.json({
+        message: "Student password reset successfully",
+        newPassword, // ⚠️ show ONCE (admin only)
+      });
+    } catch (err) {
+      console.error("RESET STUDENT PASSWORD ERROR:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
+
+
 export default router;

@@ -52,24 +52,24 @@ router.post("/register", async (req, res) => {
    LOGIN (ADMIN + FACULTY + STUDENT)
    POST /api/auth/login
 ========================================================= */
+/* ================= LOGIN (ADMIN + FACULTY + STUDENT) ================= */
 router.post("/login", async (req, res) => {
   try {
     let { email, password } = req.body;
 
-    // 🔴 Validation
     if (!email || !password) {
       return res.status(400).json({ message: "Email & password required" });
     }
 
     email = email.toLowerCase();
 
-    /* ================= ADMIN / FACULTY ================= */
+    // 1️⃣ User (admin / faculty)
     let account = await User.findOne({ email }).select("+password");
     let roleSource = "user";
 
-    /* ================= STUDENT ================= */
+    // 2️⃣ Student
     if (!account) {
-      account = await Student.findOne({ email }).select("+password");
+      account = await Student.findOne({ email });
       roleSource = "student";
     }
 
@@ -77,13 +77,13 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    /* ================= PASSWORD CHECK ================= */
+    // 3️⃣ Compare password
     const isMatch = await bcrypt.compare(password, account.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    /* ================= JWT ================= */
+    // 4️⃣ JWT
     const token = jwt.sign(
       {
         id: account._id,
@@ -93,14 +93,14 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    /* ================= RESPONSE ================= */
     res.json({
       token,
       role: roleSource === "student" ? "student" : account.role,
       user: {
         _id: account._id,
-        firstName: account.firstName,
-        lastName: account.lastName,
+        name: roleSource === "student"
+          ? account.name
+          : `${account.firstName} ${account.lastName}`,
       },
     });
   } catch (error) {
@@ -108,5 +108,6 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 export default router;
