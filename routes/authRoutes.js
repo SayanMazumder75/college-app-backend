@@ -83,6 +83,10 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid password" });
     }
 
+    if (!process.env.JWT_SECRET) {
+      console.error("❌ JWT_SECRET is missing");
+      return res.status(500).json({ message: "Server configuration error" });
+    }
     // 4️⃣ JWT
     const token = jwt.sign(
       {
@@ -98,9 +102,8 @@ router.post("/login", async (req, res) => {
       role: roleSource === "student" ? "student" : account.role,
       user: {
         _id: account._id,
-        name: roleSource === "student"
-          ? account.name
-          : `${account.firstName} ${account.lastName}`,
+        firstName: account.firstName || account.name,
+        lastName: account.lastName || "",
       },
     });
   } catch (error) {
