@@ -52,7 +52,6 @@ router.post("/register", async (req, res) => {
    LOGIN (ADMIN + FACULTY + STUDENT)
    POST /api/auth/login
 ========================================================= */
-/* ================= LOGIN (ADMIN + FACULTY + STUDENT) ================= */
 router.post("/login", async (req, res) => {
   try {
     let { email, password } = req.body;
@@ -63,24 +62,24 @@ router.post("/login", async (req, res) => {
 
     email = email.toLowerCase();
 
-    // 1️⃣ User (admin / faculty)
+    // 1️⃣ Admin / Faculty
     let account = await User.findOne({ email }).select("+password");
     let roleSource = "user";
 
-    // 2️⃣ Student
+    // 2️⃣ Student (⚠️ MUST SELECT PASSWORD)
     if (!account) {
-     account = await Student.findOne({ email }).select("+password");
+      account = await Student.findOne({ email }).select("+password");
       roleSource = "student";
     }
 
-    if (!account) {
-      return res.status(400).json({ message: "User not found" });
+    if (!account || !account.password) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
     // 3️⃣ Compare password
     const isMatch = await bcrypt.compare(password, account.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid password" });
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
     // 4️⃣ JWT
@@ -98,9 +97,10 @@ router.post("/login", async (req, res) => {
       role: roleSource === "student" ? "student" : account.role,
       user: {
         _id: account._id,
-        name: roleSource === "student"
-          ? `${account.firstName} ${account.lastName}`
-            : `${account.firstName} ${account.lastName}`,
+        firstName:
+          roleSource === "student" ? account.firstName : account.firstName,
+        lastName:
+          roleSource === "student" ? account.lastName : account.lastName,
       },
     });
   } catch (error) {
@@ -108,6 +108,7 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 export default router;
