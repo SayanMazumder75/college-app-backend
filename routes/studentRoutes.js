@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Subject from "../models/Subject.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
+import bcrypt from "bcryptjs";
 
 const router = express.Router();
 
@@ -63,19 +64,27 @@ router.post(
         emergencyContactPhone,
       } = req.body;
 
+      // ✅ BASIC VALIDATION
       if (!name || !email || !password) {
         return res.status(400).json({ message: "Required fields missing" });
       }
 
-      const exists = await Student.findOne({ email });
-      if (exists) {
+      // ✅ CHECK EMAIL IN BOTH COLLECTIONS
+      const emailExists =
+        (await Student.findOne({ email })) ||
+        (await User.findOne({ email }));
+
+      if (emailExists) {
         return res.status(409).json({ message: "Email already exists" });
       }
+
+      // 🔐 HASH PASSWORD
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       const student = await Student.create({
         name,
         email,
-        password,
+        password: hashedPassword,
         course,
         department,
         semester,
@@ -96,7 +105,11 @@ router.post(
 
       res.status(201).json({
         message: "Student added successfully",
-        student,
+        student: {
+          _id: student._id,
+          name: student.name,
+          email: student.email,
+        },
       });
     } catch (err) {
       console.error("ADD STUDENT ERROR:", err);
