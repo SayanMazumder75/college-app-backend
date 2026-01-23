@@ -1,13 +1,12 @@
+import bcrypt from "bcryptjs";
 import express from "express";
 import mongoose from "mongoose";
-import Attendance from "../models/Attendance.js";
-import Subject from "../models/Subject.js";
-import User from "../models/User.js"; // ✅ FIXED
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
+import Attendance from "../models/Attendance.js";
 import Student from "../models/Student.js";
-import bcrypt from "bcryptjs";
-
+import Subject from "../models/Subject.js";
+import User from "../models/User.js"; // ✅ FIXED
 
 const router = express.Router();
 
@@ -22,7 +21,7 @@ router.get(
   async (req, res) => {
     try {
       const students = await Student.find({ isActive: true })
-        .select("name")   // 👈 ONLY NAME (important)
+        .select("name") // 👈 ONLY NAME (important)
         .sort({ name: 1 });
 
       res.json(students);
@@ -30,64 +29,56 @@ router.get(
       console.error("ATTENDANCE STUDENTS ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
-
-
 
 /* =========================================================
    FACULTY: MARK ATTENDANCE (DATE-WISE, NO DUPLICATES)
 ========================================================= */
-router.post(
-  "/mark",
-  verifyToken,
-  allowRoles("faculty"),
-  async (req, res) => {
-    try {
-      const { studentId, subject, status, date } = req.body;
+router.post("/mark", verifyToken, allowRoles("faculty"), async (req, res) => {
+  try {
+    const { studentId, subject, status, date } = req.body;
 
-      if (!studentId || !subject || !status) {
-        return res.status(400).json({ message: "Missing fields" });
-      }
-
-      const day = date ? new Date(date) : new Date();
-      day.setHours(0, 0, 0, 0);
-
-      const nextDay = new Date(day);
-      nextDay.setDate(day.getDate() + 1);
-
-      // ✅ UPSERT: update if exists, create if not
-      const attendance = await Attendance.findOneAndUpdate(
-        {
-          studentId,
-          subject,
-          markedBy: req.user.id,
-          date: { $gte: day, $lt: nextDay },
-        },
-        {
-          studentId,
-          subject,
-          status,
-          markedBy: req.user.id,
-          date: day,
-        },
-        {
-          new: true,
-          upsert: true, // ⭐ KEY FIX
-        }
-      );
-
-      res.status(200).json({
-        message: "Attendance saved",
-        attendance,
-      });
-    } catch (error) {
-      console.error("MARK ATTENDANCE ERROR:", error);
-      res.status(500).json({ message: "Server error" });
+    if (!studentId || !subject || !status) {
+      return res.status(400).json({ message: "Missing fields" });
     }
-  }
-);
 
+    const day = date ? new Date(date) : new Date();
+    day.setHours(0, 0, 0, 0);
+
+    const nextDay = new Date(day);
+    nextDay.setDate(day.getDate() + 1);
+
+    // ✅ UPSERT: update if exists, create if not
+    const attendance = await Attendance.findOneAndUpdate(
+      {
+        studentId,
+        subject,
+        markedBy: req.user.id,
+        date: { $gte: day, $lt: nextDay },
+      },
+      {
+        studentId,
+        subject,
+        status,
+        markedBy: req.user.id,
+        date: day,
+      },
+      {
+        new: true,
+        upsert: true, // ⭐ KEY FIX
+      },
+    );
+
+    res.status(200).json({
+      message: "Attendance saved",
+      attendance,
+    });
+  } catch (error) {
+    console.error("MARK ATTENDANCE ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 /* =========================================================
    STUDENT: ATTENDANCE PERCENTAGE
@@ -115,7 +106,7 @@ router.get(
     } catch (err) {
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
 
 /* =========================================================
@@ -155,35 +146,30 @@ router.get(
     } catch (err) {
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
 
 /* =========================================================
    FACULTY: TODAY'S ATTENDANCE (LIST)
 ========================================================= */
-router.get(
-  "/today",
-  verifyToken,
-  allowRoles("faculty"),
-  async (req, res) => {
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+router.get("/today", verifyToken, allowRoles("faculty"), async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
-      const records = await Attendance.find({
-        markedBy: req.user.id,
-        date: { $gte: today, $lt: tomorrow },
-      }).populate("studentId", "name email");
+    const records = await Attendance.find({
+      markedBy: req.user.id,
+      date: { $gte: today, $lt: tomorrow },
+    }).populate("studentId", "name email");
 
-      res.json(records);
-    } catch (err) {
-      res.status(500).json({ message: "Server error" });
-    }
+    res.json(records);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
   }
-);
+});
 
 /* =========================================================
    FACULTY: SUBJECT SUMMARY (USED BY DASHBOARD)
@@ -249,7 +235,7 @@ router.get(
       console.error("FACULTY SUMMARY ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
 
 /* =========================================================
@@ -282,7 +268,7 @@ router.get(
       console.error("SUBJECT DATE ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
 
 /* =========================================================
@@ -317,23 +303,18 @@ router.get(
       console.error("LOAD PREVIOUS ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
 
 /* =========================================================
    ADMIN: FACULTIES GET
 ========================================================= */
-router.get(
-  "/faculties",
-  verifyToken,
-  allowRoles("admin"),
-  async (req, res) => {
-    const faculties = await User.find({ role: "faculty" }).select(
-  "firstName lastName email phone createdAt"
-);
-    res.json(faculties);
-  }
-);
+router.get("/faculties", verifyToken, allowRoles("admin"), async (req, res) => {
+  const faculties = await User.find({ role: "faculty" }).select(
+    "firstName lastName email phone createdAt",
+  );
+  res.json(faculties);
+});
 
 // ADMIN: ADD FACULTY
 router.post(
@@ -377,7 +358,7 @@ router.post(
       console.error("ADD FACULTY ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
 
 // ADMIN: UPDATE FACULTY
@@ -408,7 +389,7 @@ router.put(
       const updated = await User.findByIdAndUpdate(
         req.params.id,
         { firstName, lastName, email, phone },
-        { new: true }
+        { new: true },
       ).select("_id firstName lastName email phone role");
 
       if (!updated) {
@@ -423,13 +404,14 @@ router.put(
       console.error("UPDATE FACULTY ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
 
 /* =========================================================
    ADMIN: RESET FACULTY PASSWORD
    POST /api/attendance/faculties/:id/reset-password
 ========================================================= */
+
 router.post(
   "/faculties/:id/reset-password",
   verifyToken,
@@ -438,28 +420,26 @@ router.post(
     try {
       const faculty = await User.findById(req.params.id);
 
-      if (!faculty || faculty.role !== "faculty") {
+      if (!faculty) {
         return res.status(404).json({ message: "Faculty not found" });
       }
 
-      // 🔐 Generate password again
-      const newPasswordPlain = `${faculty.firstName}@${faculty.phone.slice(-4)}`;
-      const hashedPassword = await bcrypt.hash(newPasswordPlain, 10);
+      const newPassword = `${faculty.firstName}@${faculty.phone.slice(-4)}`;
+      const hashed = await bcrypt.hash(newPassword, 10);
 
-      faculty.password = hashedPassword;
+      faculty.password = hashed;
       await faculty.save();
 
       res.json({
-        message: "Password reset successfully",
-        generatedPassword: newPasswordPlain, // show once
+        message: "Password reset successful",
+        newPassword, // show once (admin only)
       });
     } catch (err) {
       console.error("RESET PASSWORD ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
-
 
 /* =========================================================
    ADMIN: DELETE FACULTY
@@ -482,8 +462,7 @@ router.delete(
       console.error("DELETE FACULTY ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
-
 
 export default router;

@@ -48,13 +48,13 @@ router.post("/register", async (req, res) => {
   }
 });
 
+/* =========================================================
+   LOGIN (ADMIN + FACULTY + STUDENT)
+   POST /api/auth/login
+========================================================= */
 router.post("/login", async (req, res) => {
   try {
     let { email, password } = req.body;
-
-    // 🔍 DEBUG 1: what frontend is sending
-    console.log("LOGIN EMAIL (RAW):", email);
-    console.log("LOGIN PASSWORD (RAW):", password);
 
     // 🔴 Validation
     if (!email || !password) {
@@ -62,7 +62,6 @@ router.post("/login", async (req, res) => {
     }
 
     email = email.toLowerCase();
-    console.log("LOGIN EMAIL (LOWERCASE):", email);
 
     /* ================= ADMIN / FACULTY ================= */
     let account = await User.findOne({ email }).select("+password");
@@ -70,27 +69,16 @@ router.post("/login", async (req, res) => {
 
     /* ================= STUDENT ================= */
     if (!account) {
-      console.log("Not found in User → checking Student");
       account = await Student.findOne({ email }).select("+password");
       roleSource = "student";
     }
-
-    // 🔍 DEBUG 2: account found or not
-    console.log("ACCOUNT FOUND:", !!account);
 
     if (!account) {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // 🔍 DEBUG 3: hash stored in DB
-    console.log("HASH IN DB:", account.password);
-
     /* ================= PASSWORD CHECK ================= */
     const isMatch = await bcrypt.compare(password, account.password);
-
-    // 🔍 DEBUG 4: password match result
-    console.log("PASSWORD MATCH:", isMatch);
-
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid password" });
     }
@@ -120,6 +108,5 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 export default router;
