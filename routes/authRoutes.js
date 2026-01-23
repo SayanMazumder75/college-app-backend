@@ -52,6 +52,7 @@ router.post("/register", async (req, res) => {
    LOGIN (ADMIN + FACULTY + STUDENT)
    POST /api/auth/login
 ========================================================= */
+/* ================= LOGIN (ADMIN + FACULTY + STUDENT) ================= */
 router.post("/login", async (req, res) => {
   try {
     let { email, password } = req.body;
@@ -62,11 +63,13 @@ router.post("/login", async (req, res) => {
 
     email = email.toLowerCase();
 
+    // 1️⃣ User (admin / faculty)
     let account = await User.findOne({ email }).select("+password");
     let roleSource = "user";
 
+    // 2️⃣ Student
     if (!account) {
-      account = await Student.findOne({ email }).select("+password");
+      account = await Student.findOne({ email });
       roleSource = "student";
     }
 
@@ -74,17 +77,13 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
+    // 3️⃣ Compare password
     const isMatch = await bcrypt.compare(password, account.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // 🔴 SAFETY CHECK
-    if (!process.env.JWT_SECRET) {
-      console.error("❌ JWT_SECRET is missing");
-      return res.status(500).json({ message: "Server configuration error" });
-    }
-
+    // 4️⃣ JWT
     const token = jwt.sign(
       {
         id: account._id,
@@ -99,12 +98,13 @@ router.post("/login", async (req, res) => {
       role: roleSource === "student" ? "student" : account.role,
       user: {
         _id: account._id,
-        firstName: account.firstName || account.name,
-        lastName: account.lastName || "",
+        name: roleSource === "student"
+          ? account.name
+          : `${account.firstName} ${account.lastName}`,
       },
     });
   } catch (error) {
-    console.error("LOGIN ERROR FULL:", error);
+    console.error("LOGIN ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
