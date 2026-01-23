@@ -6,17 +6,20 @@ import { allowRoles } from "../middleware/roleMiddleware.js";
 const router = express.Router();
 
 // ADMIN → GET ALL FACULTY
+// GET ALL FACULTY (ADMIN)
 router.get(
   "/faculty",
   verifyToken,
   allowRoles("admin"),
   async (req, res) => {
     try {
-      const faculty = await User.find({ role: "faculty" }).select(
-        "_id name"
+      const faculties = await User.find({ role: "faculty" }).select(
+        "_id firstName lastName email"
       );
-      res.json(faculty);
+
+      res.json(faculties);
     } catch (err) {
+      console.error("GET FACULTY ERROR:", err);
       res.status(500).json({ message: "Server error" });
     }
   }
