@@ -43,9 +43,10 @@ router.post(
   async (req, res) => {
     try {
       const {
-        name,
+        firstName,
+        lastName,
         email,
-        password,
+        phone,
         course,
         department,
         semester,
@@ -53,7 +54,6 @@ router.post(
         academicStatus,
         bloodGroup,
         category,
-        phone,
         alternatePhone,
         fatherName,
         fatherPhone,
@@ -64,26 +64,29 @@ router.post(
         emergencyContactPhone,
       } = req.body;
 
-      // ✅ BASIC VALIDATION
-      if (!name || !email || !password) {
+      if (!firstName || !lastName || !email || !phone) {
         return res.status(400).json({ message: "Required fields missing" });
       }
 
-      // ✅ CHECK EMAIL IN BOTH COLLECTIONS
-      const emailExists =
+      const exists =
         (await Student.findOne({ email })) ||
         (await User.findOne({ email }));
 
-      if (emailExists) {
+      if (exists) {
         return res.status(409).json({ message: "Email already exists" });
       }
 
-      // 🔐 HASH PASSWORD
-      const hashedPassword = await bcrypt.hash(password, 10);
+      // 🔐 AUTO PASSWORD
+      const namePart = firstName.replace(/\s+/g, "").substring(0, 5).toLowerCase();
+      const phonePart = phone.slice(-4);
+      const rawPassword = `${namePart}@${phonePart}`;
+      const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
       const student = await Student.create({
-        name,
+        firstName,
+        lastName,
         email,
+        phone,
         password: hashedPassword,
         course,
         department,
@@ -92,7 +95,6 @@ router.post(
         academicStatus,
         bloodGroup,
         category,
-        phone,
         alternatePhone,
         fatherName,
         fatherPhone,
@@ -105,9 +107,10 @@ router.post(
 
       res.status(201).json({
         message: "Student added successfully",
+        generatedPassword: rawPassword, // ⚠️ show once
         student: {
           _id: student._id,
-          name: student.name,
+          name: `${student.firstName} ${student.lastName}`,
           email: student.email,
         },
       });
@@ -117,6 +120,7 @@ router.post(
     }
   }
 );
+
 
 
 /* =========================================================
@@ -157,7 +161,8 @@ router.put(
   async (req, res) => {
     try {
       const allowedFields = [
-        "name",
+        "firstName",
+        "lastName",
         "email",
         "course",
         "department",
@@ -256,15 +261,11 @@ router.post(
     try {
       const student = await Student.findById(req.params.id);
 
-      if (!student) {
+      if (!student || !student.phone) {
         return res.status(404).json({ message: "Student not found" });
       }
 
-      if (!student.phone || student.phone.length < 4) {
-        return res.status(400).json({ message: "Invalid phone number" });
-      }
-
-      const namePart = student.name
+      const namePart = student.firstName
         .replace(/\s+/g, "")
         .substring(0, 5)
         .toLowerCase();
@@ -272,14 +273,12 @@ router.post(
       const phonePart = student.phone.slice(-4);
 
       const newPassword = `${namePart}@${phonePart}`;
-      const hashed = await bcrypt.hash(newPassword, 10);
-
-      student.password = hashed;
+      student.password = await bcrypt.hash(newPassword, 10);
       await student.save();
 
       res.json({
-        message: "Student password reset successfully",
-        newPassword, // ⚠️ show ONCE (admin only)
+        message: "Password reset successful",
+        newPassword, // admin only
       });
     } catch (err) {
       console.error("RESET STUDENT PASSWORD ERROR:", err);
@@ -287,6 +286,7 @@ router.post(
     }
   }
 );
+
 
 
 export default router;

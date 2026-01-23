@@ -7,7 +7,8 @@ if (mongoose.models.Student) {
 
 const studentSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    firstName: { type: String, required: true, trim: true },
+    lastName: { type: String, required: true, trim: true },
 
     email: {
       type: String,
@@ -20,7 +21,6 @@ const studentSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      minlength: 6,
       select: false,
     },
 
@@ -61,14 +61,6 @@ const studentSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-/* 🔐 HASH PASSWORD */
-studentSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
-
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-});
 
 /* 🔐 COMPARE PASSWORD */
 studentSchema.methods.comparePassword = async function (enteredPassword) {
