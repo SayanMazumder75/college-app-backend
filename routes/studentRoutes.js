@@ -20,7 +20,7 @@ router.get(
     try {
       const students = await Student.find()
         .select(
-          "name email course department semester phone academicStatus createdAt isActive"
+          "firstName lastName email course department semester phone academicStatus createdAt isActive"
         )
         .sort({ createdAt: -1 });
 
