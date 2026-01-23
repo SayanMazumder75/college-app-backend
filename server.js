@@ -13,64 +13,14 @@ import studentRoutes from "./routes/studentRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
-const createDefaultAdmin = async () => {
-  try {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    const adminPhone = process.env.ADMIN_PHONE || "9999999999";
-
-    if (!adminEmail || !adminPassword) {
-      console.log("⚠️ Admin credentials not set in env");
-      return;
-    }
-
-    const existingAdmin = await User.findOne({
-      email: adminEmail,
-      role: "admin",
-    });
-
-    if (existingAdmin) {
-      console.log("✅ Default admin already exists");
-      return;
-    }
-
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
-
-    await User.create({
-      firstName: "Super",
-      lastName: "Admin",
-      phone: adminPhone,
-      email: adminEmail,
-      password: hashedPassword,
-      role: "admin",
-    });
-
-    console.log("🔥 Default admin created successfully");
-  } catch (error) {
-    console.error("❌ Error creating default admin:", error.message);
-  }
-};
-
-
-
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 8080;
 
-/* ================= PORT (🔥 FIXED) ================= */
-const PORT = process.env.PORT || 5000;
-
-/* ================= MIDDLEWARES ================= */
+/* ================= MIDDLEWARE ================= */
 app.use(cors());
-
-// ✅ IMPORTANT: skip JSON parsing for multipart
-app.use((req, res, next) => {
-  if (req.headers["content-type"]?.includes("multipart/form-data")) {
-    return next();
-  }
-  express.json()(req, res, next);
-});
-
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* ================= ROUTES ================= */
@@ -82,27 +32,50 @@ app.use("/api/subjects", subjectRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/students", studentRoutes);
 
-/* ================= STATIC ================= */
-app.use("/uploads", express.static("uploads"));
-
-/* ================= TEST ================= */
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-/* ================= SERVER ================= */
+/* ================= AUTO CREATE ADMIN ================= */
+const createDefaultAdmin = async () => {
+  const adminExists = await User.findOne({ role: "admin" });
+
+  if (adminExists) {
+    console.log("✅ Admin already exists");
+    return;
+  }
+
+  const firstName = "Admin";
+  const lastName = "Super";
+  const phone = "0000001234";
+  const email = "admin@gmail.com";
+
+  const plainPassword = `${firstName}@${phone.slice(-4)}`;
+  const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+  await User.create({
+    firstName,
+    lastName,
+    phone,
+    email,
+    password: hashedPassword,
+    role: "admin",
+  });
+
+  console.log("🔥 Default Admin Created");
+  console.log("📧 Email:", email);
+  console.log("🔐 Password:", plainPassword);
+};
+
+/* ================= START SERVER ================= */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(async () => {
     console.log("✅ MongoDB Connected");
-
-    // 👇 CREATE ADMIN HERE
     await createDefaultAdmin();
 
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`✅ Server running on port ${PORT}`);
-    });
+    app.listen(PORT, "0.0.0.0", () =>
+      console.log(`✅ Server running on port ${PORT}`)
+    );
   })
-  .catch((err) => {
-    console.error("❌ MongoDB connection failed:", err);
-  });
+  .catch((err) => console.error("❌ MongoDB error:", err));
