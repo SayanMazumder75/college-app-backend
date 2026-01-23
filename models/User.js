@@ -1,11 +1,4 @@
 import mongoose from "mongoose";
-userSchema.virtual("name").get(function () {
-  return `${this.firstName} ${this.lastName}`;
-});
-
-userSchema.set("toJSON", { virtuals: true });
-userSchema.set("toObject", { virtuals: true });
-
 
 const userSchema = new mongoose.Schema(
   {
