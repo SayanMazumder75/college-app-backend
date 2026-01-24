@@ -3,8 +3,9 @@ import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import User from "./models/User.js";
+import path from "path";
 
+import User from "./models/User.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import noticeRoutes from "./routes/noticeRoutes.js";
@@ -23,6 +24,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ✅ THIS IS THE KEY FIX
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 /* ================= ROUTES ================= */
 app.use("/api/auth", authRoutes);
 app.use("/api", protectedRoutes);
@@ -39,11 +43,7 @@ app.get("/", (req, res) => {
 /* ================= AUTO CREATE ADMIN ================= */
 const createDefaultAdmin = async () => {
   const adminExists = await User.findOne({ role: "admin" });
-
-  if (adminExists) {
-    console.log("✅ Admin already exists");
-    return;
-  }
+  if (adminExists) return;
 
   const firstName = "Admin";
   const lastName = "Super";
@@ -63,8 +63,6 @@ const createDefaultAdmin = async () => {
   });
 
   console.log("🔥 Default Admin Created");
-  console.log("📧 Email:", email);
-  console.log("🔐 Password:", plainPassword);
 };
 
 /* ================= START SERVER ================= */
