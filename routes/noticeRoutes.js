@@ -32,9 +32,6 @@ router.post(
   upload.single("file"),
   async (req, res) => {
     try {
-      console.log("BODY:", req.body);
-      console.log("FILE:", req.file);
-
       const { title, message } = req.body;
 
       if (!title || !message) {
@@ -60,7 +57,7 @@ router.post(
 router.get("/", verifyToken, async (req, res) => {
   try {
     const notices = await Notice.find()
-      .populate("postedBy", "name")
+      .populate("postedBy", "firstName lastName") // ✅ FIX HERE
       .sort({ createdAt: -1 });
 
     res.json(notices);
@@ -79,19 +76,15 @@ router.delete(
     try {
       const notice = await Notice.findById(req.params.id);
 
-      // ❌ Notice not found
       if (!notice) {
         return res.status(404).json({ message: "Notice not found" });
       }
 
-      // ❌ Faculty trying to delete someone else's notice
       if (notice.postedBy.toString() !== req.user.id) {
         return res.status(403).json({ message: "Not authorized" });
       }
 
-      // ✅ Authorized → delete
       await notice.deleteOne();
-
       res.json({ message: "Notice deleted successfully" });
     } catch (err) {
       console.error("NOTICE DELETE ERROR:", err);
