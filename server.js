@@ -17,7 +17,8 @@ import userRoutes from "./routes/userRoutes.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT;
+console.log("🚀 Using PORT:", PORT);
 
 /* ================= MIDDLEWARE ================= */
 app.use(cors());
@@ -72,8 +73,9 @@ mongoose
     console.log("✅ MongoDB Connected");
     await createDefaultAdmin();
 
-    app.listen(PORT, "0.0.0.0", () =>
-      console.log(`✅ Server running on port ${PORT}`),
-    );
+    app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
   })
   .catch((err) => console.error("❌ MongoDB error:", err));
