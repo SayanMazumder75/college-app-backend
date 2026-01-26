@@ -99,3 +99,6 @@ mongoose
     console.error("❌ MongoDB connection error:", err);
     process.exit(1);
   });
+
+  // 🔒 Keep Railway container alive
+process.stdin.resume();
