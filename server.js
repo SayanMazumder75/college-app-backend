@@ -48,9 +48,10 @@ app.use("/api/subjects", subjectRoutes);
 app.use("/api/users", userRoutes);
 
 /* ====================== HEALTH CHECK ====================== */
-app.get("/", (req, res) => {
-  res.status(200).send("Backend is running 🚀");
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
+
 
 /* ====================== DEFAULT ADMIN ====================== */
 const createDefaultAdmin = async () => {
