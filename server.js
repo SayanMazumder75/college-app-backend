@@ -1,8 +1,8 @@
+import bcrypt from "bcryptjs"; // ✅ ADD THIS
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
 import path from "path";
 
 import User from "./models/User.js";
@@ -73,7 +73,7 @@ mongoose
     await createDefaultAdmin();
 
     app.listen(PORT, "0.0.0.0", () =>
-      console.log(`✅ Server running on port ${PORT}`)
+      console.log(`✅ Server running on port ${PORT}`),
     );
   })
   .catch((err) => console.error("❌ MongoDB error:", err));
