@@ -1,3 +1,20 @@
-node_modules
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Environment
 .env
-uploads
+.env.local
+.env.*.local
+
+# Uploads
+uploads/
+upload/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
