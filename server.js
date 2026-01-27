@@ -22,7 +22,7 @@ dotenv.config();
 const app = express();
 
 /* ====================== PORT (RAILWAY SAFE) ====================== */
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT;
 console.log("🚀 Using PORT:", PORT);
 
 /* ====================== MIDDLEWARE ====================== */
