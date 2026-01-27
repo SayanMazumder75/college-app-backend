@@ -84,20 +84,33 @@ const createDefaultAdmin = async () => {
 };
 
 /* ====================== START SERVER ====================== */
+const startServer = () => {
+  app.listen(PORT, "0.0.0.0", (err) => {
+    if (err) {
+      console.error("❌ Listen error:", err);
+      return;
+    }
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+  });
+};
+
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI || 'mongodb://localhost:27017/test')
   .then(async () => {
     console.log("✅ MongoDB Connected");
     await createDefaultAdmin();
   })
   .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
-    // Don't exit - start server anyway for health checks
+    console.error("❌ MongoDB error:", err.message);
   })
-  .finally(() => {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
+  .finally(startServer);
+
+// Graceful shutdown for Railway
+process.on('SIGTERM', () => {
+  console.log('🛑 SIGTERM received, shutting down gracefully');
+  mongoose.connection.close(() => {
+    process.exit(0);
   });
-  // 🔒 Keep Railway container alive
+});
+
 process.stdin.resume();
