@@ -1,15 +1,14 @@
 {
-  "name": "server",
+  "name": "college-app-backend",
   "version": "1.0.0",
   "type": "module",
-  "main": "server.js",
+  "main": "server/server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server/server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@ljharb/tsconfig": "^0.3.2",
     "bcryptjs": "^3.0.3",
